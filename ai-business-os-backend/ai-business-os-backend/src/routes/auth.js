@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { sql, getPool } = require('../config/db');
+const { query } = require('../config/db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 require('dotenv').config();
 
@@ -18,10 +18,8 @@ router.post('/register', async (req, res, next) => {
       return res.status(400).json({ error: 'name, email, and password are required' });
     }
 
-    const pool = await getPool();
-
-    const existingUsersResult = await pool.request().query('SELECT COUNT(*) AS count FROM users');
-    const isFirstUser = existingUsersResult.recordset[0].count === 0;
+    const existingUsersResult = await query('SELECT COUNT(*) AS count FROM users');
+    const isFirstUser = parseInt(existingUsersResult.rows[0].count) === 0;
 
     // If this isn't the first user, only an authenticated admin may create accounts.
     if (!isFirstUser) {
@@ -37,18 +35,16 @@ router.post('/register', async (req, res, next) => {
     const finalRole = isFirstUser ? 'admin' : (role || 'staff');
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const result = await pool.request()
-      .input('name', sql.NVarChar, name)
-      .input('email', sql.NVarChar, email)
-      .input('password_hash', sql.NVarChar, passwordHash)
-      .input('role', sql.NVarChar, finalRole)
-      .query(`INSERT INTO users (name, email, password_hash, role)
-              OUTPUT INSERTED.id, INSERTED.name, INSERTED.email, INSERTED.role
-              VALUES (@name, @email, @password_hash, @role)`);
+    const result = await query(
+      `INSERT INTO users (name, email, password_hash, role)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, name, email, role`,
+      [name, email, passwordHash, finalRole]
+    );
 
-    res.status(201).json({ user: result.recordset[0] });
+    res.status(201).json({ user: result.rows[0] });
   } catch (err) {
-    if (err.message && err.message.includes('UNIQUE KEY')) {
+    if (err.code === '23505') {
       return res.status(409).json({ error: 'Email already registered' });
     }
     next(err);
@@ -63,12 +59,12 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ error: 'email and password are required' });
     }
 
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('email', sql.NVarChar, email)
-      .query('SELECT * FROM users WHERE email = @email AND is_active = 1');
+    const result = await query(
+      'SELECT * FROM users WHERE email = $1 AND is_active = TRUE',
+      [email]
+    );
 
-    const user = result.recordset[0];
+    const user = result.rows[0];
     if (!user) return res.status(401).json({ error: 'Invalid email or password' });
 
     const valid = await bcrypt.compare(password, user.password_hash);
