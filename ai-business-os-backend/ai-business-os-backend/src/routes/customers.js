@@ -1,5 +1,5 @@
 const express = require('express');
-const { sql, getPool } = require('../config/db');
+const { query } = require('../config/db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
@@ -8,10 +8,10 @@ router.use(requireAuth); // every route below requires login
 // GET /api/customers
 router.get('/', async (req, res, next) => {
   try {
-    const pool = await getPool();
-    const result = await pool.request()
-      .query('SELECT * FROM customers WHERE is_deleted = 0 ORDER BY created_at DESC');
-    res.json(result.recordset);
+    const result = await query(
+      'SELECT * FROM customers WHERE is_deleted = FALSE ORDER BY created_at DESC'
+    );
+    res.json(result.rows);
   } catch (err) { next(err); }
 });
 
@@ -21,17 +21,14 @@ router.post('/', async (req, res, next) => {
     const { name, phone, email, address } = req.body;
     if (!name || !phone) return res.status(400).json({ error: 'name and phone are required' });
 
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('name', sql.NVarChar, name)
-      .input('phone', sql.NVarChar, phone)
-      .input('email', sql.NVarChar, email || null)
-      .input('address', sql.NVarChar, address || null)
-      .query(`INSERT INTO customers (name, phone, email, address)
-              OUTPUT INSERTED.*
-              VALUES (@name, @phone, @email, @address)`);
+    const result = await query(
+      `INSERT INTO customers (name, phone, email, address)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [name, phone, email || null, address || null]
+    );
 
-    res.status(201).json(result.recordset[0]);
+    res.status(201).json(result.rows[0]);
   } catch (err) { next(err); }
 });
 
@@ -39,16 +36,11 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { name, phone, email, address, loyalty_points } = req.body;
-    const pool = await getPool();
-    await pool.request()
-      .input('id', sql.Int, req.params.id)
-      .input('name', sql.NVarChar, name)
-      .input('phone', sql.NVarChar, phone)
-      .input('email', sql.NVarChar, email || null)
-      .input('address', sql.NVarChar, address || null)
-      .input('loyalty_points', sql.Int, loyalty_points || 0)
-      .query(`UPDATE customers SET name=@name, phone=@phone, email=@email,
-              address=@address, loyalty_points=@loyalty_points WHERE id=@id`);
+    await query(
+      `UPDATE customers SET name=$1, phone=$2, email=$3, address=$4, loyalty_points=$5
+       WHERE id=$6`,
+      [name, phone, email || null, address || null, loyalty_points || 0, req.params.id]
+    );
     res.json({ message: 'Customer updated' });
   } catch (err) { next(err); }
 });
@@ -56,10 +48,7 @@ router.put('/:id', async (req, res, next) => {
 // DELETE /api/customers/:id — soft delete, admin/manager only
 router.delete('/:id', requireRole('admin', 'manager'), async (req, res, next) => {
   try {
-    const pool = await getPool();
-    await pool.request()
-      .input('id', sql.Int, req.params.id)
-      .query('UPDATE customers SET is_deleted = 1 WHERE id = @id');
+    await query('UPDATE customers SET is_deleted = TRUE WHERE id = $1', [req.params.id]);
     res.json({ message: 'Customer deleted' });
   } catch (err) { next(err); }
 });

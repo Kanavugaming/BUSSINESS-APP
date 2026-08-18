@@ -1,5 +1,5 @@
 const { Server } = require('socket.io');
-const { sql, getPool } = require('../config/db');
+const { query } = require('../config/db');
 
 // Sets up Socket.io on top of the existing HTTP server.
 // Called once from server.js.
@@ -22,15 +22,12 @@ function initSockets(httpServer) {
 // Every connected dashboard receives it instantly via the 'notification' event.
 async function pushNotification(io, { type, message }) {
   try {
-    const pool = await getPool();
-    const result = await pool.request()
-      .input('type', sql.NVarChar, type)
-      .input('message', sql.NVarChar, message)
-      .query(`INSERT INTO notifications (type, message)
-              OUTPUT INSERTED.*
-              VALUES (@type, @message)`);
+    const result = await query(
+      `INSERT INTO notifications (type, message) VALUES ($1, $2) RETURNING *`,
+      [type, message]
+    );
 
-    const notification = result.recordset[0];
+    const notification = result.rows[0];
     if (io) io.emit('notification', notification);
     return notification;
   } catch (err) {

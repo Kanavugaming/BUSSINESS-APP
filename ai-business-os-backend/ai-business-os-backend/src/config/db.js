@@ -1,44 +1,31 @@
-const sql = require('mssql');
+const { Pool } = require('pg');
 require('dotenv').config();
 
 // A "pool" is a set of reusable DB connections.
 // Opening a new connection per request is slow — the pool keeps a few
 // open and hands them out/reclaims them as requests come and go.
-const config = {
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  server: process.env.DB_SERVER,
-  port: parseInt(process.env.DB_PORT) || 1433,
-  database: process.env.DB_NAME,
-  options: {
-    encrypt: false,               // true if using Azure SQL
-    trustServerCertificate: true  // needed for local dev SQL Server
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30000
-  }
-};
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // required for Neon and most hosted Postgres
+});
 
-let poolPromise;
+pool.on('connect', () => {
+  console.log('✅ Connected to PostgreSQL');
+});
 
-// We export a function that always returns the SAME pool (singleton pattern).
-// This avoids accidentally opening dozens of connections across the app.
-function getPool() {
-  if (!poolPromise) {
-    poolPromise = sql.connect(config)
-      .then(pool => {
-        console.log('✅ Connected to SQL Server');
-        return pool;
-      })
-      .catch(err => {
-        console.error('❌ DB connection failed:', err.message);
-        poolPromise = null; // allow retry on next call
-        throw err;
-      });
-  }
-  return poolPromise;
+pool.on('error', (err) => {
+  console.error('❌ DB pool error:', err.message);
+});
+
+// Convenience wrapper so route files can do: await query(text, params)
+async function query(text, params) {
+  return pool.query(text, params);
 }
 
-module.exports = { sql, getPool };
+// getPool() kept for backwards-compatibility — routes that used `await getPool()`
+// now just get the pool directly (pg Pool is already initialised, no connect needed).
+function getPool() {
+  return pool;
+}
+
+module.exports = { pool, query, getPool };
