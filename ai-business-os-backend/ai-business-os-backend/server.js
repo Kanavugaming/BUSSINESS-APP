@@ -34,7 +34,11 @@ app.use('/api/notifications', notificationRoutes);
 // Attached to the SAME http server so it works through the same IIS/iisnode
 // setup as the rest of the API — no separate port needed.
 const io = initSockets(httpServer);
-app.set('io', io); // lets any route access it via req.app.get('io')
+app.set('io', io); 
+app.use(cors({
+  origin: 'https://bussiness-2zjzu8giu-kanavugamings-projects.vercel.app',
+  credentials: true
+}));// lets any route access it via req.app.get('io')
 
 // --- Serve the built React frontend ---
 // Build the frontend (`npm run build`) and copy dist/* contents into ./public
@@ -45,6 +49,7 @@ app.use((req, res) => {
 
 // --- Error handler (must be last) ---
 app.use(errorHandler);
+
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
