@@ -46,7 +46,7 @@ app.use((req, res) => {
 // --- Error handler (must be last) ---
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => {
   console.log(`🚀 AI Business OS backend running on http://localhost:${PORT}`);
 });
