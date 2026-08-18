@@ -1,0 +1,28 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  margin-bottom: 22px;
+}
+
+.topbar h2 {
+  font-size: 20px;
+}
+
+.topbar-sub {
+  font-size: 13px;
+  color: var(--ink-muted);
+  margin-top: 3px;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .topbar { padding: 14px 16px; }
+  .topbar h2 { font-size: 17px; }
+}

@@ -1,0 +1,106 @@
+.chat-root {
+  position: fixed;
+  bottom: 22px;
+  right: 22px;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.chat-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.chat-panel {
+  width: 340px;
+  height: 440px;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(120, 120, 160, 0.15);
+  margin-bottom: 10px;
+}
+
+.chat-head > div { flex: 1; }
+
+.chat-head-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent-indigo), var(--accent-teal));
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 2px;
+}
+
+.chat-bubble {
+  max-width: 85%;
+  padding: 9px 12px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.chat-bubble.user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--accent-indigo), #9b9df5);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-bubble.assistant {
+  align-self: flex-start;
+  background: rgba(124, 127, 242, 0.09);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+
+.chat-typing { color: var(--ink-faint); font-style: italic; }
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(120, 120, 160, 0.15);
+}
+
+.chat-input-row input {
+  flex: 1;
+  font-size: 13.5px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.6);
+  outline: none;
+}
+.chat-input-row input:focus {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 3px var(--accent-indigo-soft);
+}

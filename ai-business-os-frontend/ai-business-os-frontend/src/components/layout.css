@@ -1,0 +1,19 @@
+.main-area {
+  margin-left: 264px;
+  padding: 16px 24px 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+@media (max-width: 900px) {
+  .main-area {
+    margin-left: 0;
+    padding: 0 14px 40px;
+  }
+}
